@@ -30,7 +30,18 @@
 
 <h2><a href="/ratings">Ratings</a></h2>
 
+<hr />
+ 
+<h2>Movies I Have Watched</h2>
+<ul>
+    {% for Movie in  watched_movies %}
+      <li>{{Movie.name}}</li>
+    {% endfor %}
+</ul>
+
+
 {% if error %}
   <p class='error'>{{ error }}</p>
 {% endif %}
+
 {% endblock %}

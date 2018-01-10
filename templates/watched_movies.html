@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block content %}
+
+ 
+<hr />
+ 
+<h2>Movies You Have Watched</h2>
+<ul>
+    {% for was_watcehd in  watched_movies %}
+      <li>{{Movie.name}}</li>
+    {% endfor %}
+</ul>
+
+
+
+
+{% endblock %}

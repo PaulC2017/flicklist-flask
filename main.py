@@ -13,6 +13,7 @@ class Movie(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(120))
     watched = db.Column(db.Boolean)
+    ratings = db.Column(db.String(5))
     
     # TODO: add a ratings column to the Movie table
 
@@ -38,7 +39,10 @@ def get_current_watchlist():
 def get_watched_movies():
     # For now, we are just pretending
     # returns the list of movies the user has already watched and crossed off
-    return [ "The Matrix", "The Princess Bride", "Buffy the Vampire Slayer" ]
+    watched_movies = Movie.query.filter_by(watched = True).all()
+    print("watched_movies type = ", type(watched_movies))
+    return watched_movies
+     
 
 # Create a new route called rate_movie which handles a POST request on /rating-confirmation
 @app.route("/rating-confirmation", methods=['POST'])
@@ -57,15 +61,19 @@ def rate_movie():
 
     # if we didn't redirect by now, then all is well
     
-    # TODO: make a persistent change to the model so that you STORE the rating in the database
+    # COMPLETED - TODO: make a persistent change to the model so that you STORE the rating in the database
     # (Note: the next TODO is in templates/ratings.html)
-    
+    the_movie = Movie.query.get(int(movie_id))
+    the_movie.ratings = rating
+    db.session.add(the_movie)
+    db.session.commit()
     return render_template('rating-confirmation.html', movie=movie, rating=rating)
 
 
 # Creates a new route called movie_ratings which handles a GET on /ratings
 @app.route("/ratings", methods=['GET'])
 def movie_ratings():
+     
     return render_template('ratings.html', movies = get_watched_movies())
 
 
@@ -88,7 +96,7 @@ def crossoff_movie():
 def add_movie():
     # look inside the request to figure out what the user typed
     new_movie_name = request.form['new-movie']
-
+   
     # if the user typed nothing at all, redirect and tell them the error
     if (not new_movie_name) or (new_movie_name.strip() == ""):
         error = "Please specify the movie you want to add."
@@ -107,7 +115,10 @@ def add_movie():
 @app.route("/")
 def index():
     encoded_error = request.args.get("error")
-    return render_template('edit.html', watchlist=get_current_watchlist(), error=encoded_error and cgi.escape(encoded_error, quote=True))
+    movies_watched  = get_watched_movies()
+    print(movies_watched)
+    return render_template('edit.html',   watched_movies= movies_watched, watchlist=get_current_watchlist(), 
+            error=encoded_error and cgi.escape(encoded_error, quote=True))
 
 if __name__ == "__main__":
     app.run()
