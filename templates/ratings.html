@@ -14,10 +14,12 @@
           My Rating:
           <select name="rating">
              
-                {% for rating in ["How was it?", "*", "**", "***", "****", "*****"] %}
-                    <option value={{ rating}} {% if movie.ratings is defined %} selected {% endif %}> {{ rating }} </option>
+                <!--{% for rating in ["How was it?", "*", "**", "***", "****", "*****"] %}
+                    <option value= {{ "rating"}}   selected > {{ rating }} </option>
+                {% endfor %} -->
+                {% for rating in ['How was it','*','**','***','****', '*****'] %}
+                     <option value= {{ rating }} {% if (movie.ratings is defined) and movie.ratings == rating%} selected {% endif %}> {{ rating }} </option>
                 {% endfor %}
-              
                  
            
           </select>
@@ -26,7 +28,7 @@
         <input type="submit" value="Rate it!"/> 
       </form>
     </li>
-  
+  {%endfor%}
 </ul>
 
 
