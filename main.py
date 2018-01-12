@@ -89,6 +89,7 @@ def register():
         else:
             flash("That email is already registered")
             return render_template('register.html')
+    return render_template("register.html")
 
 def is_email(string):
     # for our purposes, an email string has an '@' followed by a '.'
@@ -102,6 +103,25 @@ def is_email(string):
         domain_dot_index = string.find('.', atsign_index)
         domain_dot_present = domain_dot_index >= 0
         return domain_dot_present
+
+@app.route("/login",methods = ["POST", "GET"])
+def login():
+    if request.method == "POST":
+        email = request.form["email"]
+        password = request.form["password"]
+        user=User.query.filter_by(email=email).first()
+        if user and user.password == password:
+            session["user"] = email
+            flash("logged in")
+             
+            return redirect("/")
+        else:
+            flash("User password incorrect, or user does not exist", "error")
+            return redirect('/')
+    return render_template("login.html")
+
+
+
 
 @app.route("/logout", methods=['POST'])
 def logout():
@@ -179,7 +199,7 @@ def index():
 #         It should contain 'register' and 'login'.
 @app.before_request
 def require_login():
-    if not ('user' in session or request.endpoint == 'register'):
+    if not ('user' in session or request.endpoint == 'register' or request.endpoint == "login"):
         return redirect("/register")
 
 # In a real application, this should be kept secret (i.e. not on github)
