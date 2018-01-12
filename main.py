@@ -71,22 +71,24 @@ def register():
         if not is_email(email):
             flash('zoiks! "' + email + '" does not seem like an email address')
             return redirect('/register')
-        # COMPLETED: TODO 1: validate that form value of 'verify' matches password
+        # TODO 1: validate that form value of 'verify' matches password
 
         if not verify_pass_word(password, verify):
+            
             flash("Oops!  The passwords don't match!")
             return redirect("/register")
-
+        
         # TODO 2: validate that there is no user with that email already
-
         existing_user=User.query.filter_by(email=email).first()
-        user = User(email=email, password=password)
-        db.session.add(user)
-        db.session.commit()
-        session['user'] = user.email
-        return redirect("/")
-    else:
-        return render_template('register.html')
+        if not existing_user:
+            user = User(email=email, password=password)
+            db.session.add(user)
+            db.session.commit()
+            session['user'] = user.email
+            return redirect("/")
+        else:
+            flash("That email is already registered")
+            return render_template('register.html')
 
 def is_email(string):
     # for our purposes, an email string has an '@' followed by a '.'
