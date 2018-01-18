@@ -1,38 +1,10 @@
 from flask import Flask, request, redirect, render_template, session, flash
 from flask_sqlalchemy import SQLAlchemy
 import cgi
+from models import User, Movie
+from app import app, db
 
-app = Flask(__name__)
-app.config['DEBUG'] = True      # displays runtime errors in the browser, too
-app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql+pymysql://flicklist:MyNewPass@localhost:8889/flicklist'
-app.config['SQLALCHEMY_ECHO'] = True
 
-db = SQLAlchemy(app)
-
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True)
-    password = db.Column(db.String(120))
-    
-    def __init__(self, email, password):
-        self.email = email
-        self.password = password
-
-    def __repr__(self):
-        return '<User %r>' % self.email
-
-class Movie(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(120))
-    watched = db.Column(db.Boolean)
-    rating = db.Column(db.String(20))
-
-    def __init__(self, name):
-        self.name = name
-        self.watched = False
-
-    def __repr__(self):
-        return '<Movie %r>' % self.name
 
 # a list of movie names that nobody should have to watch
 terrible_movies = [
@@ -43,11 +15,11 @@ terrible_movies = [
     "Starship Troopers"
 ]
 
-def get_current_watchlist():
-    return Movie.query.filter_by(watched=False).all()
+def get_current_watchlist(owner):
+    return Movie.query.filter_by(watched=False,owner=owner).all()
 
-def get_watched_movies():
-    return Movie.query.filter_by(watched=True).all()
+def get_watched_movies(owner):
+    return Movie.query.filter_by(watched=True, owner=owner).all()
 
 @app.route("/login", methods=['GET', 'POST'])
 def login():
@@ -113,9 +85,9 @@ def logout():
 def rate_movie():
     movie_id = request.form['movie_id']
     rating = request.form['rating']
-
+    owner = User.query.filter_by(email = session["user"]).first()
     movie = Movie.query.get(movie_id)
-    if movie not in get_watched_movies():
+    if movie not in get_watched_movies(owner):
         # the user tried to rate a movie that isn't in their list,
         # so we redirect back to the front page and tell them what went wrong
         error = "'{0}' is not in your Watched Movies list, so you can't rate it!".format(movie)
@@ -133,7 +105,8 @@ def rate_movie():
 # Creates a new route called movie_ratings which handles a GET on /ratings
 @app.route("/ratings", methods=['GET'])
 def movie_ratings():
-    return render_template('ratings.html', movies = get_watched_movies())
+    owner = User.query.filter_by(email = session["user"]).first()
+    return render_template('ratings.html', movies = get_watched_movies(owner))
 
 @app.route("/crossoff", methods=['POST'])
 def crossoff_movie():
@@ -163,8 +136,9 @@ def add_movie():
     if new_movie_name in terrible_movies:
         error = "Trust me, you don't want to add '{0}' to your Watchlist".format(new_movie_name)
         return redirect("/?error=" + error)
-
-    movie = Movie(new_movie_name)
+    user=session["user"]
+    owner = User.query.filter_by(email = session["user"]).first()
+    movie = Movie(new_movie_name,owner)
     db.session.add(movie)
     db.session.commit()
     return render_template('add-confirmation.html', movie=movie)
@@ -172,7 +146,8 @@ def add_movie():
 @app.route("/")
 def index():
     encoded_error = request.args.get("error")
-    return render_template('edit.html', watchlist=get_current_watchlist(), error=encoded_error and cgi.escape(encoded_error, quote=True))
+    owner = User.query.filter_by(email = session["user"]).first()
+    return render_template('edit.html', watchlist=get_current_watchlist(owner), error=encoded_error and cgi.escape(encoded_error, quote=True))
 
 
 endpoints_without_login = ['login', 'register']
